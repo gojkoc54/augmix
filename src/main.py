@@ -265,7 +265,7 @@ def test(net, test_loader):
 
 def test_c(net, test_data, base_path):
     """Evaluate network on given corrupted dataset."""
-    corruption_accs = []
+    corruption_accs = {}
     for corruption in CORRUPTIONS:
         # Reference to original data is mutated
         test_data.data = np.load(base_path + corruption + '.npy')
@@ -279,11 +279,12 @@ def test_c(net, test_data, base_path):
                 pin_memory=True)
 
         test_loss, test_acc = test(net, test_loader)
-        corruption_accs.append(test_acc)
-        print('{}\n\tTest Loss {:.3f} | Test Error {:.3f}'.format(
+        corruption_accs[corruption] = test_acc
+        print('\n{}\n\t Test Loss {:.3f} | Test Error {:.3f}'.format(
                 corruption, test_loss, 100 - 100. * test_acc))
 
-    return np.mean(corruption_accs)
+    return corruption_accs
+
 
 def main():
     torch.manual_seed(1)
@@ -331,6 +332,8 @@ def main():
             num_workers=2)
 
     # Create model
+    print(f'\n\nExecuting main script for model {args.model}\n')
+    
     if args.model == 'densenet':
         net = densenet(num_classes=num_classes)
     elif args.model == 'wrn':
@@ -371,8 +374,11 @@ def main():
                 )
         )
 
-        test_c_acc = test_c(net, test_data, base_c_path)
-        print('Mean Corruption Error: {:.3f}'.format(100 - 100. * test_c_acc))
+        test_c_acc_dict = test_c(net, test_data, base_c_path)
+        print('\n\nMean Corruption Error: ')
+        for corruption in test_c_acc_dict:
+            print(f'\t{corruption}: {test_c_acc_dict[corruption]}')
+
         return
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -396,6 +402,7 @@ def main():
         raise Exception('%s is not a dir' % save_dir)
 
     log_path = os.path.join(save_dir, 'training_log.csv')
+    corruptions_path = os.path.join(save_dir, 'corruptions_log.csv')
     with open(log_path, 'w') as f:
         f.write('epoch,time(s),train_loss,test_loss,test_error(%)\n')
 
@@ -443,14 +450,18 @@ def main():
                 )
             )
 
-    test_c_acc = test_c(net, test_data, base_c_path)
-    print('Mean Corruption Error: {:.3f}'.format(100 - 100. * test_c_acc))
 
-    with open(log_path, 'a') as f:
-        f.write(
-            '%03d,%05d,%0.6f,%0.5f,%0.2f\n' %
-            (args.epochs + 1, 0, 0, 0, 100 - 100 * test_c_acc)
-            )
+    test_c_acc_dict = test_c(net, test_data, base_c_path)
+    print('\n\nMean Corruption Error: ')
+    for corruption in test_c_acc_dict:
+        print(f'\t{corruption}: {100 - 100. * test_c_acc_dict[corruption]}')
+
+    with open(corruptions_path, 'a') as f:
+        for corruption in test_c_acc_dict:
+            f.write(
+                '%s,%05d,%0.6f,%0.5f,%0.2f\n' %
+                (corruption, 0, 0, 0, 100 - 100 * test_c_acc_dict[corruption])
+                )
 
 
 if __name__ == '__main__':
