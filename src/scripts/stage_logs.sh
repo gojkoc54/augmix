@@ -1,5 +1,5 @@
 # list directories in the form "/snapshots/dir/"
-for dir in snapshots     
+for dir in snapshots/*
 do
     # remove the trailing "/"
     dir=${dir%*/}      
