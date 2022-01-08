@@ -74,6 +74,9 @@ parser.add_argument(
     )
 # AugMix options
 parser.add_argument(
+    '--should-augmix', default=1, type=int, help='Perform augmix or not.'
+    )
+parser.add_argument(
     '--mixture-width',
     default=3,
     type=int,
@@ -148,7 +151,7 @@ def get_lr(step, total_steps, lr_max, lr_min):
     return lr_min + (lr_max - lr_min) * 0.5 * (1 + np.cos(step / total_steps * np.pi))
 
 
-def aug(image, preprocess):
+def aug(image, preprocess, should_augmix):
     """Perform AugMix augmentations and compute mixture.
 
     Args:
@@ -158,6 +161,9 @@ def aug(image, preprocess):
     Returns:
         mixed: Augmented and mixed image.
     """
+    if not should_augmix:
+        return preprocess(image)
+
     aug_list = augmentations
     if args.all_ops:
         aug_list = augmentations_all
@@ -183,18 +189,22 @@ def aug(image, preprocess):
 class AugMixDataset(torch.utils.data.Dataset):
     """Dataset wrapper to perform AugMix augmentation."""
 
-    def __init__(self, dataset, preprocess, no_jsd=False):
+    def __init__(self, dataset, preprocess, no_jsd=False, should_augmix=True):
         self.dataset = dataset
         self.preprocess = preprocess
+        self.should_augmix = should_augmix
         self.no_jsd = no_jsd
 
     def __getitem__(self, i):
         x, y = self.dataset[i]
         if self.no_jsd:
-            return aug(x, self.preprocess), y
+            return aug(x, self.preprocess, self.should_augmix), y
         else:
-            im_tuple = (self.preprocess(x), aug(x, self.preprocess),
-                                    aug(x, self.preprocess))
+            im_tuple = (
+                self.preprocess(x), 
+                aug(x, self.preprocess, self.should_augmix),
+                aug(x, self.preprocess, self.should_augmix)
+                )
             return im_tuple, y
 
     def __len__(self):
@@ -318,7 +328,9 @@ def main():
         base_c_path = '../data/cifar/CIFAR-100-C/'
         num_classes = 100
 
-    train_data = AugMixDataset(train_data, preprocess, args.no_jsd)
+    train_data = AugMixDataset(
+        train_data, preprocess, args.no_jsd, args.should_augmix
+        )
     train_loader = torch.utils.data.DataLoader(
             train_data,
             batch_size=args.batch_size,
