@@ -335,13 +335,13 @@ def main():
             train_data,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=2)
+            num_workers=args.num_workers)
 
     test_loader = torch.utils.data.DataLoader(
             test_data,
             batch_size=args.eval_batch_size,
             shuffle=False,
-            num_workers=2)
+            num_workers=args.num_workers)
 
     # Create model
     print(f'\n\nExecuting main script for model {args.model}\n')
