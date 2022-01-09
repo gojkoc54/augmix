@@ -38,7 +38,7 @@ parser.add_argument(
     '-m',
     type=str,
     default='all models',
-    choices=['all models', 'wrn', 'allconv', 'densenet', 'resnext'],
+    choices=['all models', 'wrn', 'allconv', 'densenet', 'resnext', 'alexnet'],
     help='Choose architecture.'
     )
 # Optimization options
@@ -354,6 +354,8 @@ def main():
         net = AllConvNet(num_classes)
     elif args.model == 'resnext':
         net = resnext29(num_classes=num_classes)
+    elif args.model == 'alexnet':
+        net = AlexNet(num_classes=num_classes)
 
     optimizer = torch.optim.SGD(
             net.parameters(),
@@ -478,7 +480,7 @@ def main():
 
 if __name__ == '__main__':
     if args.model == 'all models':
-        for model in ['wrn', 'allconv', 'densenet', 'resnext']:
+        for model in ['wrn', 'allconv', 'densenet', 'resnext', 'alexnet']:
             args.model = model 
             main()
     else:
