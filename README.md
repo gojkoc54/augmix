@@ -58,17 +58,18 @@ We hope it works on your as well, but can't guarantee :)
 
 * Set up the conda environment (GPU required!)
 
-```conda env create -f environment.yml```
-
-```conda activate augmix```
+```
+conda env create -f environment.yml
+conda activate augmix
+```
 
 * Run the ablation study bash script
 
-```cd src/scripts```
-
-```chmod 777 run_params_ablation.sh```
-
-```./run_params_ablation.sh```
+```
+cd src/scripts
+chmod 777 run_params_ablation.sh
+./run_params_ablation.sh
+```
 
 
 
